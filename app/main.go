@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"net"
 	"os"
+	"strings"
 )
 
 // Ensures gofmt doesn't remove the "net" and "os" imports above (feel free to remove this!)
@@ -27,11 +28,27 @@ func main() {
 		os.Exit(1)
 	}
 
-	_, err = conn.Write([]byte("HTTP/1.1 200 OK\r\n\r\n"))
+	b := make([]byte, 1024)
+	if _, err := conn.Read(b); err != nil {
+		fmt.Println("Error reading request: ", err.Error())
+		os.Exit(1)
+	}
+	reqStr := string(b)
+	strSlice := strings.Split(reqStr, "\r\n")
+	reqLine := strings.Split(strSlice[0], " ")
+
+	fmt.Println(reqLine[1])
+	
+	var resp string
+	if reqLine[1] == "/" {
+		resp = "HTTP/1.1 200 OK\r\n\r\n"
+	} else {
+		resp = "HTTP/1.1 404 Not Found\r\n\r\n"
+	}
+
+	_, err = conn.Write([]byte(resp))
 	if err != nil {
 		fmt.Println("Error writing response: ", err.Error())
 		os.Exit(1)
 	}
-
-	fmt.Println("Accepted connection from: ", conn.RemoteAddr())
 }
